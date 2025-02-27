@@ -1,23 +1,19 @@
 #!/usr/bin/python3
 import logging
-import certstream
 import argparse
-import time
-from art import *
-from termcolor import cprint, colored
-import datetime
-from colorama import init, Fore, Style
 import os
 import sys
+from datetime import datetime
+
+import certstream
+from art import text2art
+from termcolor import cprint
+from colorama import init, Fore, Style
 
 init(autoreset=True)
 
 # Initialize logging
-logging.basicConfig(
-    filename="logs/certstream.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(message)s",
-)
+logging.basicConfig(filename="logs/certstream.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # Argument parser setup
 parser = argparse.ArgumentParser(
@@ -34,19 +30,11 @@ args = vars(parser.parse_args())
 
 
 def on_certstream_error(exception):
-
-    logging.error(f"Exception in CertStreamClient! -> {exception}")
+    logging.error("Exception in CertStreamClient! -> %s", exception)
 
 
 def get_timestamp():
-    """
-    Gets the current timestamp in the format 'YYYY-MM-DD HH:MM:SS'.
-
-    Returns:
-        str: The current timestamp.
-    """
-    ts = time.time()
-    return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def write_to_log_files(domain, clean, www):
@@ -63,13 +51,13 @@ def write_to_log_files(domain, clean, www):
     if not os.path.exists("logs"):
         os.makedirs("logs")
 
-    with open(os.path.join("logs", "log.txt"), "a") as f:
+    with open(os.path.join("logs", "log.txt"), "a", encoding="utf-8") as f:
         f.write(domain + "\n")
-    with open(os.path.join("logs", "domains.txt"), "a") as f:
+    with open(os.path.join("logs", "domains.txt"), "a", encoding="utf-8") as f:
         f.write(clean + "\n")
-    with open(os.path.join("logs", "domains.csv"), "a") as f:
+    with open(os.path.join("logs", "domains.csv"), "a", encoding="utf-8") as f:
         f.write(f"{timestamp},{clean}\n")
-    with open(os.path.join("logs", "www.txt"), "a") as f:
+    with open(os.path.join("logs", "www.txt"), "a", encoding="utf-8") as f:
         f.write(f"{www}\n")
 
 
@@ -98,14 +86,10 @@ def print_callback(message, context):
 
             if domain.endswith(".ie"):
                 clean_domain_name = domain.split(".")[-2] + "." + domain.split(".")[-1]
-                www_domain_name = (
-                    "www." + domain.split(".")[-2] + "." + domain.split(".")[-1]
-                )
+                www_domain_name = "www." + domain.split(".")[-2] + "." + domain.split(".")[-1]
                 write_to_log_files(domain, clean_domain_name, www_domain_name)
                 url = f"https://{domain}"
-                print(
-                    f"{Style.DIM}[{timestamp}]{Style.RESET_ALL}{Fore.GREEN} {hyperlink(url, domain)}"
-                )
+                print(f"{Style.DIM}[{timestamp}]{Style.RESET_ALL}{Fore.GREEN} {hyperlink(url, domain)}")
 
         sys.stdout.flush()
 
@@ -125,9 +109,7 @@ def main():
         f'{Fore.GREEN}The .ie do{Fore.WHITE}main na{Fore.LIGHTYELLOW_EX}me finder{Fore.RESET}{Style.DIM} | {hyperlink("https://github.com/senf666/iefinder", "Github")}\n'
     )
 
-    certstream.listen_for_events(
-        print_callback, on_error=on_certstream_error, url="wss://certstream.calidog.io/"
-    )
+    certstream.listen_for_events(print_callback, on_error=on_certstream_error, url="wss://certstream.calidog.io/")
 
 
 # -------------------------------------------------------------------------------
