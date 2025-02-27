@@ -1,50 +1,64 @@
 #!/usr/bin/python3
 import logging
-import sys
 import certstream
 import argparse
 import time
 from art import *
 from termcolor import cprint, colored
-import sys
 import datetime
-from colorama import init, Fore, Back, Style
-import sys
+from colorama import init, Fore, Style
 import os
+import sys
 
+init(autoreset=True)
 
+# Initialize logging
 logging.basicConfig(
     filename="logs/certstream.log",
     level=logging.INFO,
     format="%(asctime)s - %(message)s",
 )
-init(autoreset=True)
 
+# Argument parser setup
 parser = argparse.ArgumentParser(
-    description="Finds and logs .ie domain names by checking certfiicate transparency logs in near realtime."
+    description="Finds and logs .ie domain names by checking certificate transparency logs in near realtime."
 )
 parser.add_argument(
     "-v",
     "--verbose",
-    help="verbose output (All domains passing through).",
+    help="verbose output (All tlds passing through, not just the .ie tld).",
     required=False,
     action="store_true",
 )
 args = vars(parser.parse_args())
 
-# -------------------------------------------------------------------------------
 
+def on_certstream_error(exception):
 
-def on_error(exception):
     logging.error(f"Exception in CertStreamClient! -> {exception}")
 
 
-# -------------------------------------------------------------------------------
+def get_timestamp():
+    """
+    Gets the current timestamp in the format 'YYYY-MM-DD HH:MM:SS'.
 
-
-def write_to_files(domain, clean, www):
+    Returns:
+        str: The current timestamp.
+    """
     ts = time.time()
-    timestamp = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def write_to_log_files(domain, clean, www):
+    """
+    Writes domain information to various log files.
+
+    Args:
+        domain (str): The full domain name including subdomains.
+        clean (str): The domain name.
+        www (str): The domain name with 'www'.
+    """
+    timestamp = get_timestamp()
 
     if not os.path.exists("logs"):
         os.makedirs("logs")
@@ -59,12 +73,15 @@ def write_to_files(domain, clean, www):
         f.write(f"{www}\n")
 
 
-# -------------------------------------------------------------------------------
-
-
 def print_callback(message, context):
-    ts = time.time()
-    timestamp = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+    """
+    Callback function to handle messages from CertStream.
+
+    Args:
+        message (dict): The message received from CertStream.
+        context (dict): The context of the message.
+    """
+    timestamp = get_timestamp()
 
     if message["message_type"] == "heartbeat":
         return
@@ -76,31 +93,21 @@ def print_callback(message, context):
         else:
             domain = all_domains[0]
 
-            if args["verbose"] is True:
+            if args["verbose"]:
                 print(f"{Style.DIM}[{timestamp}]: {domain}")
 
             if domain.endswith(".ie"):
-                clean_domain_name = (
-                    domain.split(".")[len(domain.split(".")) - 2]
-                    + "."
-                    + domain.split(".")[len(domain.split(".")) - 1]
-                )
+                clean_domain_name = domain.split(".")[-2] + "." + domain.split(".")[-1]
                 www_domain_name = (
-                    "www."
-                    + domain.split(".")[len(domain.split(".")) - 2]
-                    + "."
-                    + domain.split(".")[len(domain.split(".")) - 1]
+                    "www." + domain.split(".")[-2] + "." + domain.split(".")[-1]
                 )
-                write_to_files(domain, clean_domain_name, www_domain_name)
+                write_to_log_files(domain, clean_domain_name, www_domain_name)
                 url = f"https://{domain}"
                 print(
-                    f"{Style.DIM}[{timestamp}]{Style.RESET_ALL}{Fore.GREEN} {hyperlink(url,domain)}"
+                    f"{Style.DIM}[{timestamp}]{Style.RESET_ALL}{Fore.GREEN} {hyperlink(url, domain)}"
                 )
 
         sys.stdout.flush()
-
-
-# -------------------------------------------------------------------------------
 
 
 def hyperlink(uri, label=None):
@@ -112,20 +119,18 @@ def hyperlink(uri, label=None):
     return escape_mask.format(parameters, uri, label)
 
 
-# -------------------------------------------------------------------------------
-
-
 def main():
     cprint(text2art(".ie   Finder"), "green", end=" ")
     print(
-        f'{Fore.GREEN}The .ie do{Fore.WHITE}main na{Fore.LIGHTYELLOW_EX}me finder{Fore.RESET}{Style.DIM} | {hyperlink("https://github.com/senf666/iefinder","Github")}\n'
+        f'{Fore.GREEN}The .ie do{Fore.WHITE}main na{Fore.LIGHTYELLOW_EX}me finder{Fore.RESET}{Style.DIM} | {hyperlink("https://github.com/senf666/iefinder", "Github")}\n'
     )
 
-    certstream.listen_for_events(print_callback, url="wss://certstream.calidog.io/")
+    certstream.listen_for_events(
+        print_callback, on_error=on_certstream_error, url="wss://certstream.calidog.io/"
+    )
 
 
 # -------------------------------------------------------------------------------
-
 
 if __name__ == "__main__":
     main()
