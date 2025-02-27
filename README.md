@@ -63,3 +63,9 @@ $$ python3 ieFinder.py
 ├── domains.txt   contains .ie domain names.
 └── www.txt       contains .ie domain names without subdomains, just www.domainName.ie
 ```
+
+# Attribution
+.ie Finder is heavily based on CertSniff by A-poc https://github.com/A-poc/certSniff
+
+
+
