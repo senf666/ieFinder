@@ -10,7 +10,7 @@
 
 - Logs `.ie` domain names to text files.
 - Generates logs in multiple formats: `.txt`, `.csv`.
-- Provides verbose output for all domains passing through using --verbose flag.
+- Provides verbose output for all tlds (top level domains) passing through using --verbose flag.
 - Displays hyperlinks to the found `.ie` domains.
 
 ## Requirements
