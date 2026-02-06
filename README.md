@@ -5,6 +5,10 @@
 
 <img  alt="image"  src="screenshot.png">
 
+# How it works
+
+.ie Finder connects to [CertStream](https://certstream.calidog.io/) by Calidog Security, a service that aggregates certificate transparency logs (such as Google's Argon, Cloudflare's Nimbus, etc.) and streams them over a WebSocket. Each time a new certificate is issued, the tool checks whether the domain ends in `.ie` and logs it if so.
+
 
 ## Features
 
@@ -29,7 +33,7 @@ $ pip  install  -r  requirements.txt
 
 # Usage
 ```bash
-$$ python3 ieFinder.py
+$ python3 ieFinder.py
 
     _         _____  _             _             
    (_)  ___  |  ___|(_) _ __    __| |  ___  _ __ 
@@ -54,14 +58,15 @@ $$ python3 ieFinder.py
 ...
 ```
 
-# Output
-.ie Finder produces 4 log files:
-```
 
-├── log.txt       contains a log of what happened.
-├── certstream.txt certstream log.
-├── domains.txt   contains .ie domain names.
-└── www.txt       contains .ie domain names without subdomains, just www.domainName.ie
+# Output
+.ie Finder produces 5 log files in the `logs/` directory:
+```
+├── certstream.log  certstream library log.
+├── log.txt         full domain names including subdomains.
+├── domains.txt     cleaned .ie base domain names.
+├── domains.csv     timestamped .ie domain names.
+└── www.txt         www-prefixed .ie domain names (www.domainName.ie).
 ```
 
 # Attribution

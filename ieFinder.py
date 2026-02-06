@@ -12,6 +12,9 @@ from colorama import init, Fore, Style
 
 init(autoreset=True)
 
+# Ensure logs directory exists
+os.makedirs("logs", exist_ok=True)
+
 # Initialize logging
 logging.basicConfig(filename="logs/certstream.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
@@ -48,9 +51,6 @@ def write_to_log_files(domain, clean, www):
     """
     timestamp = get_timestamp()
 
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-
     with open(os.path.join("logs", "log.txt"), "a", encoding="utf-8") as f:
         f.write(domain + "\n")
     with open(os.path.join("logs", "domains.txt"), "a", encoding="utf-8") as f:
@@ -73,23 +73,27 @@ def print_callback(message, context):
 
     if message["message_type"] == "heartbeat":
         return
+
     if message["message_type"] == "certificate_update":
-        all_domains = message["data"]["leaf_cert"]["all_domains"]
+        try:
+            all_domains = message["data"]["leaf_cert"]["all_domains"]
+        except (KeyError, TypeError):
+            return
 
-        if len(all_domains) == 0:
-            domain = "NULL"
-        else:
-            domain = all_domains[0]
+        if not all_domains:
+            return
 
-            if args["verbose"]:
-                print(f"{Style.DIM}[{timestamp}]: {domain}")
+        domain = all_domains[0]
 
-            if domain.endswith(".ie"):
-                clean_domain_name = domain.split(".")[-2] + "." + domain.split(".")[-1]
-                www_domain_name = "www." + domain.split(".")[-2] + "." + domain.split(".")[-1]
-                write_to_log_files(domain, clean_domain_name, www_domain_name)
-                url = f"https://{domain}"
-                print(f"{Style.DIM}[{timestamp}]{Style.RESET_ALL}{Fore.GREEN} {hyperlink(url, domain)}")
+        if args["verbose"]:
+            print(f"{Style.DIM}[{timestamp}]: {domain}")
+
+        if domain.endswith(".ie"):
+            clean_domain_name = domain.split(".")[-2] + "." + domain.split(".")[-1]
+            www_domain_name = "www." + domain.split(".")[-2] + "." + domain.split(".")[-1]
+            write_to_log_files(domain, clean_domain_name, www_domain_name)
+            url = f"https://{domain}"
+            print(f"{Style.DIM}[{timestamp}]{Style.RESET_ALL}{Fore.GREEN} {hyperlink(url, domain)}")
 
         sys.stdout.flush()
 

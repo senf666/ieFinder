@@ -11,8 +11,6 @@
 # Built Visual Studio Code Extensions
 *.vsix
 
-logs/*
-
 # macOS
 *.DS_Store
 .AppleDouble
@@ -35,3 +33,5 @@ Network Trash Folder
 Temporary Items
 .apdisk
 .env
+.venv/
+logs/
