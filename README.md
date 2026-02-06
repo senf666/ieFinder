@@ -69,6 +69,18 @@ $ python3 ieFinder.py
 └── www.txt         www-prefixed .ie domain names (www.domainName.ie).
 ```
 
+# Troubleshooting
+
+The default CertStream server (`certstream.calidog.io`) is a free demo instance provided by Calidog Security. It can be unreliable at times, experiencing disconnects or periods where no data is streamed. If ieFinder connects but you see the warning `No data received from CertStream`, the server is likely down or not streaming data.
+
+As an alternative, you can self-host a CertStream server using [certstream-server-go](https://github.com/d-Rickyy-b/certstream-server-go), a drop-in replacement written in Go. It can be run via Docker:
+
+```bash
+$ docker run -p 8080:8080 0rickyy0/certstream-server-go
+```
+
+Then update the WebSocket URL in `ieFinder.py` to point to your local instance: `wss://localhost:8080/`.
+
 # Attribution
 .ie Finder is heavily based on CertSniff by A-poc https://github.com/A-poc/certSniff
 

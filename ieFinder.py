@@ -3,6 +3,7 @@ import logging
 import argparse
 import os
 import sys
+import threading
 from datetime import datetime
 
 import certstream
@@ -30,6 +31,10 @@ parser.add_argument(
     action="store_true",
 )
 args = vars(parser.parse_args())
+
+
+message_received = False
+QUIT_TIMEOUT = 30
 
 
 def on_certstream_error(exception):
@@ -70,6 +75,9 @@ def print_callback(message, context):
         context (dict): The context of the message.
     """
     timestamp = get_timestamp()
+
+    global message_received
+    message_received = True
 
     if message["message_type"] == "heartbeat":
         return
@@ -113,7 +121,39 @@ def main():
         f'{Fore.GREEN}The .ie do{Fore.WHITE}main na{Fore.LIGHTYELLOW_EX}me finder{Fore.RESET}{Style.DIM} | {hyperlink("https://github.com/senf666/iefinder", "Github")}\n'
     )
 
-    certstream.listen_for_events(print_callback, on_error=on_certstream_error, url="wss://certstream.calidog.io/")
+    def spinner():
+        frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        i = 0
+        start = datetime.now()
+        while not message_received:
+            elapsed = (datetime.now() - start).total_seconds()
+            remaining = max(0, QUIT_TIMEOUT - int(elapsed))
+            sys.stdout.write(f"\r{Style.DIM}  {frames[i % len(frames)]} Waiting for certificates... ({remaining}s){Style.RESET_ALL}  ")
+            sys.stdout.flush()
+            i += 1
+            threading.Event().wait(0.1)
+        sys.stdout.write("\r" + " " * 50 + "\r")
+        sys.stdout.flush()
+
+    def on_open():
+        global message_received
+        message_received = False
+        print("Connected to CertStream server.")
+        threading.Thread(target=spinner, daemon=True).start()
+
+        def quit_if_no_data():
+            if not message_received:
+                print(f"\r  {Fore.RED}No data received from CertStream after {QUIT_TIMEOUT}s. Exiting.{Fore.RESET}")
+                os._exit(1)
+
+        threading.Timer(QUIT_TIMEOUT, quit_if_no_data).start()
+
+    certstream.listen_for_events(
+        print_callback,
+        on_open=on_open,
+        on_error=on_certstream_error,
+        url="wss://certstream.calidog.io/",
+    )
 
 
 # -------------------------------------------------------------------------------
